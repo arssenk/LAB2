@@ -40,7 +40,6 @@ vector<vector<string>> read_file(string filename, int threads){
     vector<string> words;
     vector<vector<string>> listOfWords;
     for (int i = 0; i < threads; ++i) listOfWords.push_back(words);
-    map<string, int> D;
     int i = threads;
     while (in1 >> s) {
         --i;
@@ -99,16 +98,60 @@ vector<pair<string, int>> getToVector(map<string, int> words){
         wordVector.push_back(make_pair(it->first, it->second));}
     return wordVector;
 };
+map<string, string> readConfigFile(string fileName){
+    string line, delimiter, token;
+    map<string, string> config;
+    delimiter = "=";
+    size_t pos = 0;
+    ifstream myfile (fileName);
+    if (myfile.is_open())
+    {
+        while ( getline (myfile,line) )
+        {
+            while ((pos = line.find(delimiter)) != string::npos) {
+                token = line.substr(0, pos);
+                if (token.compare("infile")== 0){
+                    token = line.substr(pos+2, line.size()-9);
+                    config["infile"] = token;
+                }
+                else if (token.compare("out_by_a")== 0){
+                    token = line.substr(pos+2, line.size()-11);
+                    config["out_by_a"] = token;
+                }
+                else if (token.compare("out_by_n")== 0){
+                    token = line.substr(pos+2, line.size()-11);
+                    config["out_by_n"]= token;
+                }
+                else if (token.compare("threads")== 0){
+                    token = line.substr(pos+1, line.size()-1);
+                    config["threads"] = token;
+                }
+                else{
+                    cout << "NO MATCH"<< endl;
+                }
+                line.erase(0, pos + delimiter.length());
+            }
+
+        }
+        myfile.close();
+        return config;
+    }
+
+    else cout << "Unable to open file";
+
+}
 
 int main() {
     string path_to_data, path_to_res_n, path_to_res_a;
     vector<vector<string>> words;
     vector<pair<string, int>> vectorOfPairs;
-    //Ці нижні ми маєм з конфіг брати, в тебе та функція.
-    int threads = 4;
-    path_to_data = "/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/data.txt";
-    path_to_res_a ="/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/res_a.txt";
-    path_to_res_n = "/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/res.txt";
+    map<string, string> config;
+    config = readConfigFile("../config.txt");
+
+    int threads = atoi(config["threads"].c_str());
+    path_to_data = config["infile"];
+    path_to_res_a =config["out_by_a"];
+    path_to_res_n = config["out_by_n"];
 
 
 
@@ -126,4 +169,3 @@ int main() {
 
     return 0;
 }
-
