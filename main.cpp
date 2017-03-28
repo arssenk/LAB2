@@ -6,11 +6,26 @@
 #include <thread>
 #include <mutex>
 #include <algorithm>
-
+#include <chrono>
+#include <atomic>
 
 using namespace std;
 map<string, int> counted[100];
 mutex lockGuard;
+
+inline std::chrono::high_resolution_clock::time_point get_current_time_fenced()
+{
+    std::atomic_thread_fence(memory_order_seq_cst);
+    auto res_time = std::chrono::high_resolution_clock::now();
+    std::atomic_thread_fence(memory_order_seq_cst);
+    return res_time;
+}
+
+template<class D>
+inline long long to_us(const D& d)
+{
+    return std::chrono::duration_cast<chrono::microseconds>(d).count();
+}
 
 bool sortbysec(const pair<string,int> &a,
                const pair<string,int> &b)
@@ -58,9 +73,14 @@ int multithreading(int numb, vector<vector<string>> word){
     else{
         int noOfThreads = numb;
         thread threadIDs[noOfThreads+1];
+
+        auto start_time_counting =  get_current_time_fenced();
         for (int i = 0; i < noOfThreads; ++i){
             threadIDs[i] = thread(count_word, word[i], i);
         }
+        auto finish_time_counting =  get_current_time_fenced();
+        auto total_time_counting = finish_time_counting - start_time_counting;
+        cout << "Counting time: " << to_us(total_time_counting) << endl;
         for(int iter = 0; iter < numb; iter++)
         {
             threadIDs[iter].join();
@@ -142,6 +162,7 @@ map<string, string> readConfigFile(string fileName){
 }
 
 int main() {
+    auto start_time = get_current_time_fenced();
     string path_to_data, path_to_res_n, path_to_res_a;
     vector<vector<string>> words;
     vector<pair<string, int>> vectorOfPairs;
@@ -154,8 +175,9 @@ int main() {
     path_to_res_n = config["out_by_n"];
 
 
-
+    auto start_time_reading = get_current_time_fenced();
     words = read_file(path_to_data, threads);
+    auto finish_time_reading = get_current_time_fenced();
 
     multithreading(threads, words);
     map<string, int> output;
@@ -166,6 +188,17 @@ int main() {
     writeAToFile(path_to_res_n, vectorOfPairs);
     sort(vectorOfPairs.begin(), vectorOfPairs.end(), sortbyfirst);
     writeAToFile(path_to_res_a, vectorOfPairs);
+
+    auto finish_time = get_current_time_fenced();
+    auto total_time = finish_time - start_time;
+    auto total_time_reading = finish_time_reading - start_time_reading;
+    cout << "Total time: " << to_us(total_time) << endl;
+    cout << "Reading time: " << to_us(total_time_reading) << endl;
+
+
+    std::fstream timefile("time.txt");
+    timefile<<to_us(total_time)<<endl;
+    timefile.close();
 
     return 0;
 }
