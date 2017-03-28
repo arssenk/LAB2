@@ -5,6 +5,8 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <algorithm>
+
 
 using namespace std;
 map<string, int> counted[100];
@@ -38,53 +40,7 @@ vector<vector<string>> read_file(string filename, int threads){
     in1.close();
     return listOfWords;
 }
-void readConfigFile(string fileName){
-    string line;
-    string delimiter = "=";
-    size_t pos = 0;
-    string infile, out_by_a, out_by_n;
-    int threads;
-    string token;
-    ifstream myfile (fileName);
-    if (myfile.is_open())
-    {
-        while ( getline (myfile,line) )
-        {
 
-            while ((pos = line.find(delimiter)) != string::npos) {
-                token = line.substr(0, pos);
-                if (token.compare("infile")== 0){
-                    token = line.substr(pos+2, line.size()-9);
-
-                    infile = token;
-                    cout << infile  << endl;
-                }
-                else if (token.compare("out_by_a")== 0){
-                    token = line.substr(0, pos);
-                    out_by_a = token;
-                }
-                else if (token.compare("out_by_n")== 0){
-                    token = line.substr(0, pos);
-                    out_by_n = token;
-                }
-                else if (token.compare("threads")== 0){
-                    threads = atoi(token.c_str());
-                    cout << "th" ;
-                }
-                else{
-                    cout << token << "sd"<< endl;
-                }
-                line.erase(0, pos + delimiter.length());
-            }
-
-        }
-        myfile.close();
-
-    }
-
-    else cout << "Unable to open file";
-    cout << out_by_a;
-}
 int multithreading(int numb, vector<vector<string>> word){
     if (numb <= 0){
         cout << "Invalid number of threads";
@@ -94,7 +50,6 @@ int multithreading(int numb, vector<vector<string>> word){
         int noOfThreads = numb;
         thread threadIDs[noOfThreads+1];
         for (int i = 0; i < noOfThreads; ++i){
-            cout << word[i].size() << endl;
             threadIDs[i] = thread(count_word, word[i], i);
         }
         for(int iter = 0; iter < numb; iter++)
@@ -104,39 +59,111 @@ int multithreading(int numb, vector<vector<string>> word){
         return 1;
     }
 }
-//map<string, int> merge(map<string, int> words, int numOfThhreads){
-//    for (auto it=map2.begin(); it!=map2.end(); ++it) {
-//        if ( map_result[it->first] )
-//            map_result[it->first] += it->second;
-//        else
-//            map_result[it->first] = it->second;
-//    }
+map<string, int> merge(int numOfThreads){
+    map<string, int> answer;
+    cout << counted[0].size() << endl;
+    for (int i = 1; i < numOfThreads; ++i){
+        cout << counted[i].size() << endl;
+        for (auto it=counted[i].begin(); it!=counted[i].end(); ++it) {
+            if ( counted[0][it->first] )
+                counted[0][it->first] += it->second;
+            else
+                counted[0][it->first] = it->second;
+        }
+    }
+    answer = counted[0];
+    cout << counted[0].size() << endl;
+    return answer;
+
+};
+
+
+
+
+void testik(){
+    int stop  = 0;
+    for (int i = 0; i < 4; ++i){
+        for (auto k = counted[i].begin(); k != counted[i].end(); ++k){
+            if (stop == 5){
+                stop=0;
+                break;
+            }
+            stop++;
+            cout << k->first<< " : " << k->second << " || " << i <<  endl;
+        }
+    }
+}
+void writeAToFile(string path, vector<pair<string, int>> words){
+    ofstream res(path);
+    for (int i = 0; i < words.size(); ++i)
+        res << words[i].first << ": " << words[i].second << endl;
+    res.close();
+}
+//void writeToFile(string path, multimap<int, string> words){
+//    ofstream res(path);
+//    map <string, int>::iterator it;
+//    for (multimap<int, string>::iterator itr = words.begin(); itr != words.end(); ) {
+//        /* ... process *itr ... */
+//        cout << itr->first << ": " << itr->second << endl;
+//        itr++;
+//        /* Now, go skip to the first entry with a new key. */
+//        multimap<int, string>::iterator curr = itr;
 //
-//};
+//    }
+//        //res << it->first << ": " << it->second << endl;
+//    res.close();
+//}
+vector<pair<string, int>> getToVector(map<string, int> words){
+    map <string, int>::iterator it;
+    vector<pair<string, int>> wordVector;
+    for (it = words.begin(); it != words.end(); it++){
+        wordVector.push_back(make_pair(it->first, it->second));}
+    return wordVector;
+};
+bool sortbysec(const pair<string,int> &a,
+               const pair<string,int> &b)
+{
+    return (a.second > b.second);
+}
+bool sortbyfirst(const pair<string,int> &a,
+               const pair<string,int> &b)
+{
+    return (a.first < b.first);
+}
 int main() {
-   // read_file("/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/data.txt", 4);
 
+    int threads = 4;
+    vector<vector<string>> words;
+    words = read_file("/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/data.txt", threads);
+    string path="/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/res.txt";
+    string path_a="/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/res_a.txt";
+    multithreading(threads, words);
+    map<string, int> output;
+    output = merge(threads);
+    vector<pair<string, int>> kk;
+    kk = getToVector(output);
+    sort(kk.begin(), kk.end(), sortbysec);
+    writeAToFile(path, kk);
+    sort(kk.begin(), kk.end(), sortbyfirst);
+    writeAToFile(path_a, kk);
 
-//    int threads = 4;
-//    vector<vector<string>> words;
-//    words = read_file("/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/data.txt", threads);
-//    multithreading(threads, words);
+//    for(int i = 0; i < kk.size(); i++)
+//    {
+//        cout << kk[i].first << ", " << kk[i].second << endl;
+//    }
 
+//    auto cmp = [](std::pair<string, int> const & a, std::pair<string, int> const & b)
+//    {
+//        return a.second != b.second?  a.second < b.second : a.first < b.first;
+//    };
 
-    readConfigFile("../config.txt");
+//    sort(output.begin(), output.end(), descending<string, int>());
+
+    //readConfigFile("../config.txt");
 //setlocale(LC_ALL, "Russian");
     //readConfigFile("/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/config.txt");
     //number_of_threads(2, words);
 
-
-
-
-    const char *path="/home/arsen/Documents/Year_2/Semester_2/ACS/Proj/LAB2/res.txt";
-    ofstream res(path);
-    map <string, int>::iterator it;
-//    for (it = D.begin(); it != D.end(); it++)
-//        res << it->first << ": " << it->second << endl;
-//    res.close();
     return 0;
 }
 
