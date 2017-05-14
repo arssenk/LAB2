@@ -78,13 +78,14 @@ int multithreading(int numb, vector<vector<string>> word){
         for (int i = 0; i < noOfThreads; ++i){
             threadIDs[i] = thread(count_word, word[i], i);
         }
-        auto finish_time_counting =  get_current_time_fenced();
-        auto total_time_counting = finish_time_counting - start_time_counting;
-        cout << "Counting time: " << to_us(total_time_counting) << endl;
+
         for(int iter = 0; iter < numb; iter++)
         {
             threadIDs[iter].join();
         }
+        auto finish_time_counting =  get_current_time_fenced();
+        auto total_time_counting = finish_time_counting - start_time_counting;
+        cout << "Counting time: " << to_us(total_time_counting) << endl;
         return 1;
     }
 }
