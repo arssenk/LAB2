@@ -38,7 +38,7 @@ bool sortbyfirst(const pair<string,int> &a,
     return (a.first < b.first);
 }
 
-map<string, int> count_word(vector<string> words, int ID){
+map<string, int> count_word(const vector<string>& words, int ID){
     map<string, int> D;
     for (int i = 0; i < words.size(); ++i){
         D[words[i]]++;
@@ -65,7 +65,7 @@ vector<vector<string>> read_file(string filename, int threads){
     return listOfWords;
 }
 
-int multithreading(int numb, vector<vector<string>> word){
+int multithreading(int numb, const vector<vector<string>>& word){
     if (numb <= 0){
         cout << "Invalid number of threads";
         return -1;
